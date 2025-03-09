@@ -1,1 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Track Mastery</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+        }
+        #container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #16213e;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        #current-user {
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+        #user-selection {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        select, input[type="text"] {
+            padding: 8px;
+            border: 1px solid #0f3460;
+            border-radius: 4px;
+            font-size: 14px;
+            background: #e0e0e0;
+            color: #333;
+        }
+        #new-user-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        #stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #b0b0b0;
+        }
+        #stats span {
+            font-weight: bold;
+            color: #00d4ff;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #ff2e63;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #ff577f;
+        }
+        button.active {
+            background-color: #00d4ff;
+        }
+        #reset-btn, #clear-storage-btn { background-color: #ff2e63; }
+        #reset-btn:hover, #clear-storage-btn:hover { background-color: #ff577f; }
+        #setlist-selection, #track-selection {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #game-area {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #0f3460;
+            border: 2px solid #00d4ff;
+            border-radius: 8px;
+        }
+        #question {
+            font-size: 32px;
+            font-weight: bold;
+            color: #e0e0e0;
+            margin: 15px 0;
+        }
+        #answer {
+            font-size: 20px;
+            color: #b0b0b0;
+        }
+        #user-input {
+            width: 120px;
+            font-size: 16px;
+            padding: 10px;
+            text-align: center;
+            margin: 10px 0;
+            border: 1px solid #0f3460;
+            border-radius: 4px;
+            background: #e0e0e0;
+            color: #333;
+        }
+        #feedback {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 15px 0;
+            min-height: 24px;
+        }
+        #feedback.green { color: #00ff85; }
+        #feedback.red { color: #ff2e63; }
+        #track-progress {
+            margin: 20px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            background: #0f3460;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+            border: 1px solid #00d4ff;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #00ff85;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #16213e;
+            margin: 5% auto;
+            padding: 25px;
+            width: 90%;
+            max-width: 700px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            max-height: 80vh;
+            overflow-y: auto;
+            color: #e0e0e0;
+        }
+        .modal-content h2 {
+            margin-top: 0;
+            color: #00d4ff;
+        }
+        details { margin: 15px 0; }
+        summary {
+            cursor: pointer;
+            padding: 5px;
+            background: #0f3460;
+            border-radius: 4px;
+            color: #e0e0e0;
+        }
+        ul {
+            padding-left: 20px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>Math Track Mastery</h1>
+        <div id="current-user">Current DJ: None</div>
+        <div id="user-selection">
+            <select id="user-select"><option value="" selected>Select a DJ</option></select>
+            <button id="load-user-btn">Load DJ</button>
+            <button id="add-user-btn">Add DJ</button>
+        </div>
+        <div id="new-user-input" style="display: none;">
+            <input type="text" id="user-name" placeholder="Enter DJ name">
+            <button id="save-name-btn">Save</button>
+        </div>
+        <div id="stats">
+            <div>Total Tracks Mastered: <span id="mastery-count">0</span></div>
+            <div>Setlist Mastery: <span id="op-mastery">0/144</span></div>
+            <div>Mix Points: <span id="user-points">0</span> | Level: <span id="user-level">Rookie</span> | Streak: <span id="streak-count">0</span></div>
+        </div>
+        <div id="setlist-selection">
+            <button id="addBtn">Addition</button>
+            <button id="subBtn">Subtraction</button>
+            <button id="mulBtn">Multiplication</button>
+            <button id="divBtn">Division</button>
+        </div>
+        <div id="track-selection" style="display: none;">
+            <button class="track-btn" data-group="0">Track 1</button>
+            <button class="track-btn" data-group="1">Track 2</button>
+            <button class="track-btn" data-group="2">Track 3</button>
+            <button class="track-btn" data-group="3">Track 4</button>
+        </div>
+        <div id="track-progress"></div>
+        <div id="game-area">
+            <div id="question"></div>
+            <span id="answer"></span>
+            <input type="number" id="user-input" style="display: none;">
+            <div>
+                <button id="coverBtn" style="display: none;">Cover Beat</button>
+                <button id="compareBtn" style="display: none;">Compare Drop</button>
+                <button id="nextBtn" style="display: none;">Next Track</button>
+            </div>
+            <div id="feedback">Select or add a DJ to start!</div>
+        </div>
+        <div id="controls">
+            <button id="reset-btn">Reset Setlist</button>
+            <button id="clear-storage-btn">Clear All Tracks</button>
+            <a href="#" id="summary-link">Track Summary</a>
+            <a href="#" id="teacher-report-link">Festival Report</a>
+        </div>
+        <div id="mastery-summary" class="modal">
+            <div class="modal-content">
+                <h2>Track Summary</h2>
+                <div id="summary-content"></div>
+                <button id="download-btn">Download Mix</button>
+                <button id="close-summary">Close</button>
+            </div>
+        </div>
+        <div id="teacher-report" class="modal">
+            <div class="modal-content">
+                <h2>Festival Report</h2>
+                <div id="report-content"></div>
+                <button id="download-report-btn">Download Report</button>
+                <button id="close-report">Close</button>
+            </div>
+        </div>
+    </div>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const facts = {
+                addition: Array.from({ length: 144 }, (_, i) => {
+                    const a = Math.floor(i / 12) + 1, b = (i % 12) + 1;
+                    return { q: `${a} + ${b}`, a: a + b, group: Math.floor((a - 1) / 3) };
+                }),
+                subtraction: Array.from({ length: 144 }, (_, i) => {
+                    const a = Math.floor(i / 12) + 1, b = (i % 12) + 1;
+                    return { q: `${a + b} - ${b}`, a: a, group: Math.floor((a - 1) / 3) };
+                }),
+                multiplication: Array.from({ length: 144 }, (_, i) => {
+                    const a = Math.floor(i / 12) + 1, b = (i % 12) + 1;
+                    return { q: `${a} × ${b}`, a: a * b, group: Math.floor((a - 1) / 3) };
+                }),
+                division: Array.from({ length: 144 }, (_, i) => {
+                    const a = Math.floor(i / 12) + 1, b = (i % 12) + 1;
+                    return { q: `${a * b} ÷ ${b}`, a: a, group: Math.floor((a - 1) / 3) };
+                })
+            };
+
+            const questionEl = document.getElementById("question");
+            const answerEl = document.getElementById("answer");
+            const userInput = document.getElementById("user-input");
+            const feedbackEl = document.getElementById("feedback");
+            const coverBtn = document.getElementById("coverBtn");
+            const compareBtn = document.getElementById("compareBtn");
+            const nextBtn = document.getElementById("nextBtn");
+            const opMasteryEl = document.getElementById("op-mastery");
+            const masteryCountEl = document.getElementById("mastery-count");
+            const addBtn = document.getElementById("addBtn");
+            const subBtn = document.getElementById("subBtn");
+            const mulBtn = document.getElementById("mulBtn");
+            const divBtn = document.getElementById("divBtn");
+            const resetBtn = document.getElementById("reset-btn");
+            const clearStorageBtn = document.getElementById("clear-storage-btn");
+            const summaryLink = document.getElementById("summary-link");
+            const teacherReportLink = document.getElementById("teacher-report-link");
+            const masterySummary = document.getElementById("mastery-summary");
+            const summaryContent = document.getElementById("summary-content");
+            const closeSummaryBtn = document.getElementById("close-summary");
+            const downloadBtn = document.getElementById("download-btn");
+            const teacherReport = document.getElementById("teacher-report");
+            const reportContent = document.getElementById("report-content");
+            const closeReportBtn = document.getElementById("close-report");
+            const downloadReportBtn = document.getElementById("download-report-btn");
+            const userSelect = document.getElementById("user-select");
+            const loadUserBtn = document.getElementById("load-user-btn");
+            const addUserBtn = document.getElementById("add-user-btn");
+            const newUserInput = document.getElementById("new-user-input");
+            const userNameInput = document.getElementById("user-name");
+            const saveNameBtn = document.getElementById("save-name-btn");
+            const currentUserEl = document.getElementById("current-user");
+            const trackSelection = document.getElementById("track-selection");
+            const trackProgress = document.getElementById("track-progress");
+            const userPointsEl = document.getElementById("user-points");
+            const userLevelEl = document.getElementById("user-level");
+            const streakCountEl = document.getElementById("streak-count");
+
+            let currentFact = null, selectedOp = null, selectedGroup = null, currentUser = null;
+            let mastery = { addition: {}, subtraction: {}, multiplication: {}, division: {} };
+            let points = 0, streak = 0;
+
+            const levels = [
+                { name: "Rookie", threshold: 0 },
+                { name: "Mixer", threshold: 100 },
+                { name: "Headliner", threshold: 300 },
+                { name: "Legend", threshold: 500 }
+            ];
+
+            function populateUserDropdown() {
+                const users = JSON.parse(localStorage.getItem("mathTrackMasteryUsers")) || [];
+                userSelect.innerHTML = '<option value="" selected>Select a DJ</option>';
+                users.forEach(user => {
+                    const option = document.createElement("option");
+                    option.value = user;
+                    option.textContent = user;
+                    userSelect.appendChild(option);
+                });
+            }
+
+            function loadUserData(username) {
+                if (!username) return;
+                currentUser = username;
+                localStorage.setItem("mathTrackMasteryCurrentUser", currentUser);
+                currentUserEl.textContent = `Current DJ: ${currentUser}`;
+                const userDataRaw = localStorage.getItem(`mathTrackMastery_${currentUser}`);
+                let userData;
+                try {
+                    userData = JSON.parse(userDataRaw) || {
+                        mastery: { addition: {}, subtraction: {}, multiplication: {}, division: {} },
+                        points: 0,
+                        streak: 0
+                    };
+                } catch (e) {
+                    console.error("Failed to parse user data:", e);
+                    userData = { mastery: { addition: {}, subtraction: {}, multiplication: {}, division: {} }, points: 0, streak: 0 };
+                }
+                mastery = {
+                    addition: userData.mastery.addition || {},
+                    subtraction: userData.mastery.subtraction || {},
+                    multiplication: userData.mastery.multiplication || {},
+                    division: userData.mastery.division || {}
+                };
+                points = userData.points || 0;
+                streak = userData.streak || 0;
+                updateMasteryCount();
+                updatePointsAndLevel();
+                feedbackEl.textContent = "Pick a setlist to drop some beats!";
+            }
+
+            function saveUserData() {
+                if (currentUser) {
+                    const dataToSave = { mastery, points, streak };
+                    localStorage.setItem(`mathTrackMastery_${currentUser}`, JSON.stringify(dataToSave));
+                    console.log("Saved data for", currentUser, dataToSave);
+                }
+            }
+
+            loadUserBtn.addEventListener("click", () => {
+                const selectedUser = userSelect.value;
+                if (selectedUser) loadUserData(selectedUser);
+                else feedbackEl.textContent = "Please select a DJ!";
+            });
+
+            addUserBtn.addEventListener("click", () => {
+                newUserInput.style.display = "flex";
+                userNameInput.focus();
+            });
+
+            saveNameBtn.addEventListener("click", () => {
+                const name = userNameInput.value.trim();
+                if (name) {
+                    let users = JSON.parse(localStorage.getItem("mathTrackMasteryUsers")) || [];
+                    if (!users.includes(name)) {
+                        users.push(name);
+                        localStorage.setItem("mathTrackMasteryUsers", JSON.stringify(users));
+                    }
+                    loadUserData(name);
+                    populateUserDropdown();
+                    newUserInput.style.display = "none";
+                    userNameInput.value = "";
+                } else {
+                    feedbackEl.textContent = "Please enter a DJ name!";
+                }
+            });
+
+            function getRandomFact() {
+                if (!selectedOp || selectedGroup === null) {
+                    feedbackEl.textContent = selectedOp ? "Pick a track to start!" : "Pick a setlist to start!";
+                    return null;
+                }
+                const groupFacts = facts[selectedOp].filter(f => f.group === selectedGroup);
+                return groupFacts[Math.floor(Math.random() * groupFacts.length)];
+            }
+
+            function displayFact() {
+                if (!currentUser) {
+                    feedbackEl.textContent = "Select or add a DJ to start!";
+                    return;
+                }
+                currentFact = getRandomFact();
+                if (!currentFact) return;
+                questionEl.textContent = currentFact.q; // Add visuals later
+                answerEl.textContent = currentFact.a;
+                answerEl.style.display = "inline";
+                userInput.style.display = "none";
+                userInput.value = "";
+                feedbackEl.textContent = "";
+                coverBtn.style.display = "inline";
+                compareBtn.style.display = "none";
+                nextBtn.style.display = "none";
+            }
+
+            coverBtn.addEventListener("click", () => {
+                if (!currentFact) return;
+                answerEl.style.display = "none";
+                userInput.style.display = "inline";
+                coverBtn.style.display = "none";
+                compareBtn.style.display = "inline";
+                userInput.focus();
+            });
+
+            compareBtn.addEventListener("click", () => {
+                if (!currentFact || !selectedOp) {
+                    feedbackEl.textContent = "Error: No track or setlist selected!";
+                    return;
+                }
+                const userAnswer = parseInt(userInput.value);
+                if (isNaN(userAnswer)) {
+                    feedbackEl.textContent = "Please enter a number!";
+                    return;
+                }
+                mastery[selectedOp][currentFact.q] = mastery[selectedOp][currentFact.q] || { attempts: 0, correct: 0, lastAttempt: null };
+                mastery[selectedOp][currentFact.q].attempts++;
+                mastery[selectedOp][currentFact.q].lastAttempt = new Date().toISOString();
+                if (userAnswer === currentFact.a) {
+                    mastery[selectedOp][currentFact.q].correct++;
+                    points += 10;
+                    streak++;
+                    if (streak % 3 === 0) {
+                        points += 20;
+                        feedbackEl.textContent = `Streak ${streak}! +20 Mix Points!`;
+                        feedbackEl.classList.add("green");
+                    } else {
+                        feedbackEl.textContent = "Nailed that beat!";
+                        feedbackEl.classList.add("green");
+                    }
+                    feedbackEl.classList.remove("red");
+                } else {
+                    feedbackEl.textContent = `Offbeat! It’s ${currentFact.a}. Try again!`;
+                    feedbackEl.classList.add("red");
+                    feedbackEl.classList.remove("green");
+                    streak = 0;
+                }
+                saveUserData();
+                updateMasteryCount();
+                updatePointsAndLevel();
+                updateTrackProgress();
+                compareBtn.style.display = "none";
+                nextBtn.style.display = "inline";
+                nextBtn.focus();
+            });
+
+            userInput.addEventListener("keypress", (e) => {
+                if (e.key === "Enter" && compareBtn.style.display === "inline") compareBtn.click();
+            });
+
+            nextBtn.addEventListener("click", displayFact);
+            nextBtn.addEventListener("keypress", (e) => {
+                if (e.key === "Enter") displayFact();
+            });
+
+            function updateMasteryCount() {
+                if (!mastery || typeof mastery !== "object") {
+                    mastery = { addition: {}, subtraction: {}, multiplication: {}, division: {} };
+                }
+                const totalMastered = Object.keys(mastery).reduce((sum, op) => {
+                    return sum + Object.values(mastery[op] || {}).filter(m => m.correct >= 3).length;
+                }, 0);
+                masteryCountEl.textContent = totalMastered;
+                const opMastered = selectedOp ? Object.values(mastery[selectedOp] || {}).filter(m => m.correct >= 3).length : 0;
+                opMasteryEl.textContent = `${opMastered}/144`;
+            }
+
+            function updatePointsAndLevel() {
+                userPointsEl.textContent = points;
+                streakCountEl.textContent = streak;
+                const currentLevel = levels.reduce((prev, curr) => 
+                    points >= curr.threshold ? curr : prev, levels[0]);
+                userLevelEl.textContent = currentLevel.name;
+            }
+
+            function updateTrackProgress() {
+                if (!selectedOp) return;
+                let content = "";
+                for (let g = 0; g < 4; g++) {
+                    const groupFacts = facts[selectedOp].filter(f => f.group === g);
+                    const masteredInGroup = groupFacts.filter(f => 
+                        mastery[selectedOp][f.q] && mastery[selectedOp][f.q].correct >= 3).length;
+                    const progressPercent = (masteredInGroup / 36) * 100;
+                    content += `<div>Track ${g + 1} (${g * 3 + 1}-${g * 3 + 3}): ${masteredInGroup}/36</div>`;
+                    content += `<div class="progress-bar"><div class="progress-fill" style="width: ${progressPercent}%"></div></div>`;
+                }
+                trackProgress.innerHTML = content;
+            }
+
+            function setOperation(op, btn) {
+                if (!currentUser) {
+                    feedbackEl.textContent = "Select or add a DJ to start!";
+                    return;
+                }
+                selectedOp = op;
+                selectedGroup = null;
+                document.querySelectorAll("#setlist-selection button").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                trackSelection.style.display = "flex";
+                document.querySelectorAll(".track-btn").forEach(b => b.classList.remove("active"));
+                updateMasteryCount();
+                updateTrackProgress();
+                questionEl.textContent = "";
+                answerEl.textContent = "";
+                coverBtn.style.display = "none";
+                compareBtn.style.display = "none";
+                nextBtn.style.display = "none";
+                userInput.style.display = "none";
+            }
+
+            addBtn.addEventListener("click", () => setOperation("addition", addBtn));
+            subBtn.addEventListener("click", () => setOperation("subtraction", subBtn));
+            mulBtn.addEventListener("click", () => setOperation("multiplication", mulBtn));
+            divBtn.addEventListener("click", () => setOperation("division", divBtn));
+
+            document.querySelectorAll(".track-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    selectedGroup = parseInt(btn.dataset.group);
+                    document.querySelectorAll(".track-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    displayFact();
+                });
+            });
+
+            resetBtn.addEventListener("click", () => {
+                if (!currentUser) {
+                    feedbackEl.textContent = "Select or add a DJ to start!";
+                    return;
+                }
+                if (confirm(`Are you sure you want to reset ${currentUser}'s setlist?`)) {
+                    mastery = { addition: {}, subtraction: {}, multiplication: {}, division: {} };
+                    points = 0;
+                    streak = 0;
+                    saveUserData();
+                    updateMasteryCount();
+                    updatePointsAndLevel();
+                    updateTrackProgress();
+                    feedbackEl.textContent = "Setlist reset! Pick a setlist to start.";
+                    questionEl.textContent = "";
+                    answerEl.textContent = "";
+                    coverBtn.style.display = "none";
+                    compareBtn.style.display = "none";
+                    nextBtn.style.display = "none";
+                    userInput.style.display = "none";
+                }
+            });
+
+            clearStorageBtn.addEventListener("click", () => {
+                if (confirm("Are you sure you want to clear all tracks? This will erase all DJs and progress!")) {
+                    localStorage.clear();
+                    currentUser = null;
+                    mastery = { addition: {}, subtraction: {}, multiplication: {}, division: {} };
+                    points = 0;
+                    streak = 0;
+                    currentUserEl.textContent = "Current DJ: None";
+                    populateUserDropdown();
+                    updateMasteryCount();
+                    updatePointsAndLevel();
+                    updateTrackProgress();
+                    feedbackEl.textContent = "All tracks cleared! Add a DJ to start.";
+                    questionEl.textContent = "";
+                    answerEl.textContent = "";
+                    coverBtn.style.display = "none";
+                    compareBtn.style.display = "none";
+                    nextBtn.style.display = "none";
+                    userInput.style.display = "none";
+                    trackSelection.style.display = "none";
+                    document.querySelectorAll("#setlist-selection button").forEach(b => b.classList.remove("active"));
+                }
+            });
+
+            summaryLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                if (!currentUser) {
+                    feedbackEl.textContent = "Select or add a DJ to view summary!";
+                    return;
+                }
+                masterySummary.style.display = "block";
+                let content = `<p>Mix Points: ${points} | Level: ${userLevelEl.textContent} | Best Streak: ${streak}</p>`;
+                Object.keys(mastery).forEach(op => {
+                    content += `<details><summary>${op.charAt(0).toUpperCase() + op.slice(1)}</summary>`;
+                    for (let g = 0; g < 4; g++) {
+                        const groupFacts = facts[op].filter(f => f.group === g);
+                        const masteredFacts = groupFacts.filter(f => 
+                            mastery[op][f.q] && mastery[op][f.q].correct >= 3).map(f => f.q);
+                        const notMasteredFacts = groupFacts.filter(f => 
+                            mastery[op][f.q] && mastery[op][f.q].correct < 3 && mastery[op][f.q].attempts > 0).map(f => f.q);
+                        const progressPercent = (masteredFacts.length / 36) * 100;
+                        content += `<h4>Track ${g + 1} (${g * 3 + 1}-${g * 3 + 3})</h4>`;
+                        content += `<div class="progress-bar"><div class="progress-fill" style="width: ${progressPercent}%"></div></div>`;
+                        content += `<p>Mastered: ${masteredFacts.length}/36</p>`;
+                        content += `<details><summary>Mastered (${masteredFacts.length})</summary><ul>`;
+                        masteredFacts.forEach(fact => content += `<li>${fact}</li>`);
+                        content += `</ul></details>`;
+                        content += `<details><summary>Not Mastered (${notMasteredFacts.length})</summary><ul>`;
+                        notMasteredFacts.forEach(fact => content += `<li>${fact}</li>`);
+                        content += `</ul></details>`;
+                    }
+                    content += `</details>`;
+                });
+                summaryContent.innerHTML = content || "No tracks mixed yet!";
+            });
+
+            teacherReportLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                if (!teacherReport) return console.error("teacherReport not found");
+                teacherReport.style.display = "block";
+                let users = JSON.parse(localStorage.getItem("mathTrackMasteryUsers")) || [];
+                let content = "";
+                if (users.length === 0) {
+                    content = "No DJs have played yet.";
+                } else {
+                    users.forEach(user => {
+                        const userDataRaw = localStorage.getItem(`mathTrackMastery_${user}`);
+                        const userDataDefault = {
+                            mastery: { addition: {}, subtraction: {}, multiplication: {}, division: {} },
+                            points: 0,
+                            streak: 0
+                        };
+                        const userData = userDataRaw ? JSON.parse(userDataRaw) : userDataDefault;
+                        userData.mastery = {
+                            addition: userData.mastery.addition || {},
+                            subtraction: userData.mastery.subtraction || {},
+                            multiplication: userData.mastery.multiplication || {},
+                            division: userData.mastery.division || {}
+                        };
+                        const totalMastered = Object.keys(userData.mastery).reduce((sum, op) => {
+                            return sum + Object.values(userData.mastery[op]).filter(m => m.correct >= 3).length;
+                        }, 0);
+                        content += `<h3>${user} (Total Tracks Mastered: ${totalMastered}, Mix Points: ${userData.points}, Best Streak: ${userData.streak})</h3>`;
+                        Object.keys(userData.mastery).forEach(op => {
+                            const opMastered = Object.values(userData.mastery[op]).filter(m => m.correct >= 3).length;
+                            content += `<details><summary>${op.charAt(0).toUpperCase() + op.slice(1)} (Mastered: ${opMastered}/144)</summary>`;
+                            const allAttempts = Object.entries(userData.mastery[op])
+                                .filter(([_, data]) => data.attempts > 0)
+                                .map(([q, data]) => ({ q, ...data }));
+                            if (allAttempts.length > 0) {
+                                content += `<ul>`;
+                                allAttempts.forEach(f => {
+                                    const incorrect = f.attempts - f.correct;
+                                    content += `<li>${f.q} - Attempts: ${f.attempts}, Correct: ${f.correct}, Incorrect: ${incorrect}</li>`;
+                                });
+                                content += `</ul>`;
+                            } else {
+                                content += `<p>No attempts recorded for this setlist.</p>`;
+                            }
+                            content += `</details>`;
+                        });
+                    });
+                }
+                reportContent.innerHTML = content || "No DJ progress recorded yet!";
+            });
+
+            downloadBtn.addEventListener("click", () => {
+                if (!currentUser) {
+                    feedbackEl.textContent = "Select or add a DJ to download mix!";
+                    return;
+                }
+                let csvContent = "Setlist,Track,Fact,Status,Mix Points,Streak\n";
+                Object.keys(mastery).forEach(op => {
+                    for (let g = 0; g < 4; g++) {
+                        const groupFacts = facts[op].filter(f => f.group === g);
+                        const masteredFacts = groupFacts.filter(f => 
+                            mastery[op][f.q] && mastery[op][f.q].correct >= 3).map(f => f.q);
+                        const notMasteredFacts = groupFacts.filter(f => 
+                            mastery[op][f.q] && mastery[op][f.q].correct < 3 && mastery[op][f.q].attempts > 0).map(f => f.q);
+                        masteredFacts.forEach(fact => {
+                            csvContent += `${op},${g + 1} (${g * 3 + 1}-${g * 3 + 3}),"${fact}",Mastered,${points},${streak}\n`;
+                        });
+                        notMasteredFacts.forEach(fact => {
+                            csvContent += `${op},${g + 1} (${g * 3 + 1}-${g * 3 + 3}),"${fact}",Not Mastered,${points},${streak}\n`;
+                        });
+                    }
+                });
+                const blob = new Blob([csvContent], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `math_track_mastery_results_${currentUser}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+
+            downloadReportBtn.addEventListener("click", () => {
+                const now = new Date().toISOString();
+                let csvContent = `Festival Report - Generated: ${now}\n`;
+                csvContent += "DJ,Setlist,Track,Fact,Attempts,Correct,Incorrect,Mastered,Mix Points,Streak,Last Attempt\n";
+                let users = JSON.parse(localStorage.getItem("mathTrackMasteryUsers")) || [];
+                if (users.length === 0) {
+                    csvContent += "No DJs have played yet.\n";
+                } else {
+                    users.forEach(user => {
+                        const userDataRaw = localStorage.getItem(`mathTrackMastery_${user}`);
+                        const userDataDefault = {
+                            mastery: { addition: {}, subtraction: {}, multiplication: {}, division: {} },
+                            points: 0,
+                            streak: 0
+                        };
+                        const userData = userDataRaw ? JSON.parse(userDataRaw) : userDataDefault;
+                        userData.mastery = {
+                            addition: userData.mastery.addition || {},
+                            subtraction: userData.mastery.subtraction || {},
+                            multiplication: userData.mastery.multiplication || {},
+                            division: userData.mastery.division || {}
+                        };
+                        Object.keys(userData.mastery).forEach(op => {
+                            const allAttempts = Object.entries(userData.mastery[op])
+                                .filter(([_, data]) => data.attempts > 0)
+                                .map(([q, data]) => {
+                                    const fact = facts[op].find(f => f.q === q);
+                                    const group = fact ? `${fact.group + 1} (${fact.group * 3 + 1}-${fact.group * 3 + 3})` : "Unknown";
+                                    return { q, group, ...data };
+                                });
+                            allAttempts.sort((a, b) => a.q.localeCompare(b.q));
+                            allAttempts.forEach(f => {
+                                const incorrect = f.attempts - f.correct;
+                                const mastered = f.correct >= 3 ? "Yes" : "No";
+                                const lastAttempt = f.lastAttempt || "N/A";
+                                csvContent += `"${user}",${op},"${f.group}","${f.q}",${f.attempts},${f.correct},${incorrect},${mastered},${userData.points},${userData.streak},${lastAttempt}\n`;
+                            });
+                        });
+                    });
+                }
+                const blob = new Blob([csvContent], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `math_track_mastery_festival_report_${now.replace(/:/g, "-")}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+
+            closeSummaryBtn.addEventListener("click", () => {
+                masterySummary.style.display = "none";
+            });
+
+            closeReportBtn.addEventListener("click", () => {
+                teacherReport.style.display = "none";
+            });
+
+            feedbackEl.textContent = "Select or add a DJ to start!";
+            opMasteryEl.textContent = "0/144";
+            populateUserDropdown();
+            const lastUser = localStorage.getItem("mathTrackMasteryCurrentUser");
+            if (lastUser) loadUserData(lastUser);
+        });
+    </script>
+</body>
+</html>
