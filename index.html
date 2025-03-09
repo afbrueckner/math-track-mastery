@@ -185,38 +185,27 @@
             padding-left: 20px;
             margin: 10px 0;
         }
-        /* Drag and Drop */
-        #drag-area {
+        /* Beat Builder */
+        #beat-pads {
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 20px;
             margin: 15px 0;
         }
-        .draggable {
-            width: 50px;
-            height: 50px;
+        .beat-pad {
+            width: 80px;
+            height: 80px;
             background: #ff2e63;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: move;
-            user-select: none;
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.1s;
         }
-        #drop-target {
-            width: 150px;
-            height: 100px;
-            border: 2px dashed #00d4ff;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #00d4ff;
-            font-size: 16px;
-            margin: 0 auto;
-        }
-        #drop-target.dragover {
-            background: rgba(0, 212, 255, 0.2);
+        .beat-pad:active {
+            transform: scale(0.95);
         }
     </style>
 </head>
@@ -253,8 +242,7 @@
         <div id="track-progress"></div>
         <div id="game-area">
             <div id="question"></div>
-            <div id="drag-area" style="display: none;"></div>
-            <div id="drop-target" style="display: none;">Drop Here</div>
+            <div id="beat-pads" style="display: none;"></div>
             <span id="answer"></span>
             <input type="number" id="user-input" style="display: none;">
             <div>
@@ -288,6 +276,7 @@
         </div>
         <audio id="correct-sound" src="https://freesound.org/data/previews/171/171671_2437358-lq.mp3"></audio>
         <audio id="incorrect-sound" src="https://freesound.org/data/previews/595/595368_4932882-lq.mp3"></audio>
+        <audio id="beat-sound" src="https://freesound.org/data/previews/316/316847_4932882-lq.mp3"></audio>
     </div>
 
     <script>
@@ -312,8 +301,7 @@
             };
 
             const questionEl = document.getElementById("question");
-            const dragArea = document.getElementById("drag-area");
-            const dropTarget = document.getElementById("drop-target");
+            const beatPads = document.getElementById("beat-pads");
             const answerEl = document.getElementById("answer");
             const userInput = document.getElementById("user-input");
             const feedbackEl = document.getElementById("feedback");
@@ -352,11 +340,12 @@
             const streakCountEl = document.getElementById("streak-count");
             const correctSound = document.getElementById("correct-sound");
             const incorrectSound = document.getElementById("incorrect-sound");
+            const beatSound = document.getElementById("beat-sound");
 
             let currentFact = null, selectedOp = null, selectedGroup = null, currentUser = null;
             let mastery = { addition: {}, subtraction: {}, multiplication: {}, division: {} };
             let points = 0, streak = 0;
-            let dragCount = 0, requiredDrags = 0;
+            let tapCounts = { left: 0, right: 0 }, requiredTaps = { left: 0, right: 0 };
 
             const levels = [
                 { name: "Rookie", threshold: 0 },
@@ -450,7 +439,7 @@
                 return groupFacts[Math.floor(Math.random() * groupFacts.length)];
             }
 
-            function startCopyMix() {
+            function startBeatBuilder() {
                 if (!currentUser) {
                     feedbackEl.textContent = "Select or add a DJ to start!";
                     return;
@@ -463,61 +452,52 @@
                 answerEl.style.display = "inline";
                 userInput.style.display = "none";
                 userInput.value = "";
-                feedbackEl.textContent = "Drag the items to the deck!";
-                dragArea.style.display = "flex";
-                dropTarget.style.display = "block";
+                feedbackEl.textContent = `Tap ${left} times, then ${right} times!`;
+                beatPads.style.display = "flex";
                 coverBtn.style.display = "none";
                 compareBtn.style.display = "none";
                 nextBtn.style.display = "none";
 
-                dragArea.innerHTML = "";
-                dragCount = 0;
-                requiredDrags = left + right;
-                for (let i = 0; i < left; i++) {
-                    const vinyl = document.createElement("div");
-                    vinyl.className = "draggable";
-                    vinyl.draggable = true;
-                    vinyl.textContent = "🎵";
-                    dragArea.appendChild(vinyl);
-                }
-                for (let i = 0; i < right; i++) {
-                    const stick = document.createElement("div");
-                    stick.className = "draggable";
-                    stick.draggable = true;
-                    stick.textContent = "🥁";
-                    dragArea.appendChild(stick);
-                }
+                beatPads.innerHTML = "";
+                tapCounts = { left: 0, right: 0 };
+                requiredTaps = { left: left, right: right };
 
-                document.querySelectorAll(".draggable").forEach(item => {
-                    item.addEventListener("dragstart", (e) => {
-                        e.dataTransfer.setData("text/plain", item.textContent);
-                    });
-                });
+                const leftPad = document.createElement("div");
+                leftPad.className = "beat-pad";
+                leftPad.textContent = left;
+                const rightPad = document.createElement("div");
+                rightPad.className = "beat-pad";
+                rightPad.textContent = right;
+                beatPads.appendChild(leftPad);
+                beatPads.appendChild(rightPad);
 
-                dropTarget.addEventListener("dragover", (e) => {
-                    e.preventDefault();
-                    dropTarget.classList.add("dragover");
-                });
-                dropTarget.addEventListener("dragleave", () => {
-                    dropTarget.classList.remove("dragover");
-                });
-                dropTarget.addEventListener("drop", (e) => {
-                    e.preventDefault();
-                    dropTarget.classList.remove("dragover");
-                    const data = e.dataTransfer.getData("text/plain");
-                    const dragged = Array.from(dragArea.children).find(child => child.textContent === data);
-                    if (dragged) {
-                        dragArea.removeChild(dragged);
-                        dragCount++;
-                        dropTarget.textContent = `Dropped: ${dragCount}/${requiredDrags}`;
-                        if (dragCount === requiredDrags) {
-                            feedbackEl.textContent = "Mix complete! Ready to cover.";
-                            dragArea.style.display = "none";
-                            dropTarget.style.display = "none";
-                            coverBtn.style.display = "inline";
-                        }
+                leftPad.addEventListener("click", () => {
+                    if (tapCounts.left < requiredTaps.left) {
+                        tapCounts.left++;
+                        beatSound.currentTime = 0;
+                        beatSound.play();
+                        feedbackEl.textContent = `Left: ${tapCounts.left}/${requiredTaps.left}, Right: ${tapCounts.right}/${requiredTaps.right}`;
+                        checkBeatComplete();
                     }
                 });
+
+                rightPad.addEventListener("click", () => {
+                    if (tapCounts.left === requiredTaps.left && tapCounts.right < requiredTaps.right) {
+                        tapCounts.right++;
+                        beatSound.currentTime = 0;
+                        beatSound.play();
+                        feedbackEl.textContent = `Left: ${tapCounts.left}/${requiredTaps.left}, Right: ${tapCounts.right}/${requiredTaps.right}`;
+                        checkBeatComplete();
+                    }
+                });
+            }
+
+            function checkBeatComplete() {
+                if (tapCounts.left === requiredTaps.left && tapCounts.right === requiredTaps.right) {
+                    feedbackEl.textContent = "Beat built! Ready to cover.";
+                    beatPads.style.display = "none";
+                    coverBtn.style.display = "inline";
+                }
             }
 
             coverBtn.addEventListener("click", () => {
@@ -578,9 +558,9 @@
                 if (e.key === "Enter" && compareBtn.style.display === "inline") compareBtn.click();
             });
 
-            nextBtn.addEventListener("click", startCopyMix);
+            nextBtn.addEventListener("click", startBeatBuilder);
             nextBtn.addEventListener("keypress", (e) => {
-                if (e.key === "Enter") startCopyMix();
+                if (e.key === "Enter") startBeatBuilder();
             });
 
             function updateMasteryCount() {
@@ -632,8 +612,7 @@
                 updateTrackProgress();
                 questionEl.textContent = "";
                 answerEl.textContent = "";
-                dragArea.style.display = "none";
-                dropTarget.style.display = "none";
+                beatPads.style.display = "none";
                 coverBtn.style.display = "none";
                 compareBtn.style.display = "none";
                 nextBtn.style.display = "none";
@@ -650,7 +629,7 @@
                     selectedGroup = parseInt(btn.dataset.group);
                     document.querySelectorAll(".track-btn").forEach(b => b.classList.remove("active"));
                     btn.classList.add("active");
-                    startCopyMix();
+                    startBeatBuilder();
                 });
             });
 
@@ -670,8 +649,7 @@
                     feedbackEl.textContent = "Setlist reset! Pick a setlist to start.";
                     questionEl.textContent = "";
                     answerEl.textContent = "";
-                    dragArea.style.display = "none";
-                    dropTarget.style.display = "none";
+                    beatPads.style.display = "none";
                     coverBtn.style.display = "none";
                     compareBtn.style.display = "none";
                     nextBtn.style.display = "none";
@@ -694,8 +672,7 @@
                     feedbackEl.textContent = "All tracks cleared! Add a DJ to start.";
                     questionEl.textContent = "";
                     answerEl.textContent = "";
-                    dragArea.style.display = "none";
-                    dropTarget.style.display = "none";
+                    beatPads.style.display = "none";
                     coverBtn.style.display = "none";
                     compareBtn.style.display = "none";
                     nextBtn.style.display = "none";
