@@ -185,6 +185,39 @@
             padding-left: 20px;
             margin: 10px 0;
         }
+        /* Drag and Drop */
+        #drag-area {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .draggable {
+            width: 50px;
+            height: 50px;
+            background: #ff2e63;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: move;
+            user-select: none;
+        }
+        #drop-target {
+            width: 150px;
+            height: 100px;
+            border: 2px dashed #00d4ff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00d4ff;
+            font-size: 16px;
+            margin: 0 auto;
+        }
+        #drop-target.dragover {
+            background: rgba(0, 212, 255, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -220,6 +253,8 @@
         <div id="track-progress"></div>
         <div id="game-area">
             <div id="question"></div>
+            <div id="drag-area" style="display: none;"></div>
+            <div id="drop-target" style="display: none;">Drop Here</div>
             <span id="answer"></span>
             <input type="number" id="user-input" style="display: none;">
             <div>
@@ -251,6 +286,8 @@
                 <button id="close-report">Close</button>
             </div>
         </div>
+        <audio id="correct-sound" src="https://freesound.org/data/previews/171/171671_2437358-lq.mp3"></audio>
+        <audio id="incorrect-sound" src="https://freesound.org/data/previews/595/595368_4932882-lq.mp3"></audio>
     </div>
 
     <script>
@@ -275,6 +312,8 @@
             };
 
             const questionEl = document.getElementById("question");
+            const dragArea = document.getElementById("drag-area");
+            const dropTarget = document.getElementById("drop-target");
             const answerEl = document.getElementById("answer");
             const userInput = document.getElementById("user-input");
             const feedbackEl = document.getElementById("feedback");
@@ -311,10 +350,13 @@
             const userPointsEl = document.getElementById("user-points");
             const userLevelEl = document.getElementById("user-level");
             const streakCountEl = document.getElementById("streak-count");
+            const correctSound = document.getElementById("correct-sound");
+            const incorrectSound = document.getElementById("incorrect-sound");
 
             let currentFact = null, selectedOp = null, selectedGroup = null, currentUser = null;
             let mastery = { addition: {}, subtraction: {}, multiplication: {}, division: {} };
             let points = 0, streak = 0;
+            let dragCount = 0, requiredDrags = 0;
 
             const levels = [
                 { name: "Rookie", threshold: 0 },
@@ -368,7 +410,6 @@
                 if (currentUser) {
                     const dataToSave = { mastery, points, streak };
                     localStorage.setItem(`mathTrackMastery_${currentUser}`, JSON.stringify(dataToSave));
-                    console.log("Saved data for", currentUser, dataToSave);
                 }
             }
 
@@ -409,30 +450,84 @@
                 return groupFacts[Math.floor(Math.random() * groupFacts.length)];
             }
 
-            function displayFact() {
+            function startCopyMix() {
                 if (!currentUser) {
                     feedbackEl.textContent = "Select or add a DJ to start!";
                     return;
                 }
                 currentFact = getRandomFact();
                 if (!currentFact) return;
-                questionEl.textContent = currentFact.q; // Add visuals later
+                const [left, right] = currentFact.q.split(/[\+\-\×÷]/).map(Number);
+                questionEl.textContent = currentFact.q;
                 answerEl.textContent = currentFact.a;
                 answerEl.style.display = "inline";
                 userInput.style.display = "none";
                 userInput.value = "";
-                feedbackEl.textContent = "";
-                coverBtn.style.display = "inline";
+                feedbackEl.textContent = "Drag the items to the deck!";
+                dragArea.style.display = "flex";
+                dropTarget.style.display = "block";
+                coverBtn.style.display = "none";
                 compareBtn.style.display = "none";
                 nextBtn.style.display = "none";
+
+                dragArea.innerHTML = "";
+                dragCount = 0;
+                requiredDrags = left + right;
+                for (let i = 0; i < left; i++) {
+                    const vinyl = document.createElement("div");
+                    vinyl.className = "draggable";
+                    vinyl.draggable = true;
+                    vinyl.textContent = "🎵";
+                    dragArea.appendChild(vinyl);
+                }
+                for (let i = 0; i < right; i++) {
+                    const stick = document.createElement("div");
+                    stick.className = "draggable";
+                    stick.draggable = true;
+                    stick.textContent = "🥁";
+                    dragArea.appendChild(stick);
+                }
+
+                document.querySelectorAll(".draggable").forEach(item => {
+                    item.addEventListener("dragstart", (e) => {
+                        e.dataTransfer.setData("text/plain", item.textContent);
+                    });
+                });
+
+                dropTarget.addEventListener("dragover", (e) => {
+                    e.preventDefault();
+                    dropTarget.classList.add("dragover");
+                });
+                dropTarget.addEventListener("dragleave", () => {
+                    dropTarget.classList.remove("dragover");
+                });
+                dropTarget.addEventListener("drop", (e) => {
+                    e.preventDefault();
+                    dropTarget.classList.remove("dragover");
+                    const data = e.dataTransfer.getData("text/plain");
+                    const dragged = Array.from(dragArea.children).find(child => child.textContent === data);
+                    if (dragged) {
+                        dragArea.removeChild(dragged);
+                        dragCount++;
+                        dropTarget.textContent = `Dropped: ${dragCount}/${requiredDrags}`;
+                        if (dragCount === requiredDrags) {
+                            feedbackEl.textContent = "Mix complete! Ready to cover.";
+                            dragArea.style.display = "none";
+                            dropTarget.style.display = "none";
+                            coverBtn.style.display = "inline";
+                        }
+                    }
+                });
             }
 
             coverBtn.addEventListener("click", () => {
                 if (!currentFact) return;
+                questionEl.textContent = currentFact.q.split("=")[0] + " = ?";
                 answerEl.style.display = "none";
                 userInput.style.display = "inline";
                 coverBtn.style.display = "none";
                 compareBtn.style.display = "inline";
+                feedbackEl.textContent = "Drop your answer!";
                 userInput.focus();
             });
 
@@ -462,10 +557,12 @@
                         feedbackEl.classList.add("green");
                     }
                     feedbackEl.classList.remove("red");
+                    correctSound.play();
                 } else {
                     feedbackEl.textContent = `Offbeat! It’s ${currentFact.a}. Try again!`;
                     feedbackEl.classList.add("red");
                     feedbackEl.classList.remove("green");
+                    incorrectSound.play();
                     streak = 0;
                 }
                 saveUserData();
@@ -481,9 +578,9 @@
                 if (e.key === "Enter" && compareBtn.style.display === "inline") compareBtn.click();
             });
 
-            nextBtn.addEventListener("click", displayFact);
+            nextBtn.addEventListener("click", startCopyMix);
             nextBtn.addEventListener("keypress", (e) => {
-                if (e.key === "Enter") displayFact();
+                if (e.key === "Enter") startCopyMix();
             });
 
             function updateMasteryCount() {
@@ -535,6 +632,8 @@
                 updateTrackProgress();
                 questionEl.textContent = "";
                 answerEl.textContent = "";
+                dragArea.style.display = "none";
+                dropTarget.style.display = "none";
                 coverBtn.style.display = "none";
                 compareBtn.style.display = "none";
                 nextBtn.style.display = "none";
@@ -551,7 +650,7 @@
                     selectedGroup = parseInt(btn.dataset.group);
                     document.querySelectorAll(".track-btn").forEach(b => b.classList.remove("active"));
                     btn.classList.add("active");
-                    displayFact();
+                    startCopyMix();
                 });
             });
 
@@ -571,6 +670,8 @@
                     feedbackEl.textContent = "Setlist reset! Pick a setlist to start.";
                     questionEl.textContent = "";
                     answerEl.textContent = "";
+                    dragArea.style.display = "none";
+                    dropTarget.style.display = "none";
                     coverBtn.style.display = "none";
                     compareBtn.style.display = "none";
                     nextBtn.style.display = "none";
@@ -593,6 +694,8 @@
                     feedbackEl.textContent = "All tracks cleared! Add a DJ to start.";
                     questionEl.textContent = "";
                     answerEl.textContent = "";
+                    dragArea.style.display = "none";
+                    dropTarget.style.display = "none";
                     coverBtn.style.display = "none";
                     compareBtn.style.display = "none";
                     nextBtn.style.display = "none";
